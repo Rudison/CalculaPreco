@@ -107,10 +107,10 @@
             <b-button
               class="mr-2"
               size="sm"
-              @click="editar(row.item, row.index, $event.target)"
-              variant="warning"
+              @click="selecionar(row.item, row.index, $event.target)"
+              variant="primary"
             >
-              <b-icon icon="pencil" aria-hidden="true">Selecionar</b-icon>
+              <b-icon icon="file-check" aria-hidden="true">Selecionar</b-icon>
             </b-button>
           </template>
         </b-table>
@@ -167,8 +167,12 @@ export default {
         )
         .then((res) => {
           this.dadosItem = res.data;
-          this.$emit('detalhesItem', this.dadosItem);
         });
+    },
+    selecionar(item) {
+      console.log(item);
+      this.$emit('detalhesItem', item);
+      this.$bvModal.hide('modalProdutos');
     },
   },
 };

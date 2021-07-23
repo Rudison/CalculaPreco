@@ -377,6 +377,9 @@ export default {
         PrecoUnitVndProd: 0,
         MargemLucro: 52.14,
         ValCustoOp: 0,
+        CodBarraProd: '',
+        CodRefProd: '',
+        CodFabrProd: '',
       },
 
       precoFinal: 0,
