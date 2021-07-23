@@ -14,10 +14,13 @@
                 id="precoProd"
                 style="font-weight: bold;"
                 v-model="precoProduto"
+                :value="precoProduto"
                 placeholder="0.00"
               ></b-form-input>
             </b-input-group>
-
+            <div class="erro" v-if="!$v.precoProduto.required">
+              * Preço Produto Obrigatório
+            </div>
             <b-input-group
               prepend="IPI %"
               class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
@@ -69,7 +72,7 @@
             </b-input-group>
 
             <b-input-group
-              prepend="MVA"
+              prepend="MVA %"
               class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
             >
               <b-form-input
@@ -87,6 +90,7 @@
               <b-form-input
                 id="baseCalculoInput"
                 disabled
+                style="font-weight: bold;"
                 v-model="baseCalculo"
                 placeholder="0.00"
               ></b-form-input>
@@ -143,12 +147,28 @@
             </b-input-group>
 
             <b-input-group
-              prepend="ST Média"
+              prepend="ST Média %"
               class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
             >
-              <b-form-input id="stMedia" disabled></b-form-input>
+              <b-form-input
+                id="stMedia"
+                style="font-weight: bold;"
+                v-model="stMedia"
+                placeholder="0.00"
+                disabled
+              ></b-form-input>
             </b-input-group>
           </b-col>
+          <!-- <b-col cols="2" class="mt-2">
+            <b-input-group prepend="Lucro">
+              <b-form-input
+                id="lucro"
+                style="font-weight: bold;"
+                v-model.trim="lucro"
+                placeholder="0.00"
+              ></b-form-input>
+            </b-input-group>
+          </b-col> -->
         </b-row>
       </b-form>
     </b-container>
@@ -235,14 +255,15 @@
         <b-col>
           <b-input-group
             prepend="Margem"
-            class="mb-2 mr-sm-2 mb-sm-0 mt-2"
+            v-b-tooltip.hover
+            title="Lucro"
+            class="mb-2 mr-sm-2 mb-'sm-0 mt-2"
             font="bold"
           >
             <b-form-input
               id="margem"
               style="font-weight: bold;"
               v-model.trim="itemBlue.PercMargem"
-              disabled
             ></b-form-input> </b-input-group
         ></b-col>
         <b-col>
@@ -265,7 +286,7 @@
             class="mb-2 mr-sm-2 mb-sm-0 mt-2"
           >
             <b-form-input
-              id="custoOperacional"
+              id="custoOperaci"
               disabled
               style="font-weight: bold;"
               v-model.trim="itemBlue.PercCPMF"
@@ -333,6 +354,7 @@
 
 <script>
 import PesquisaBlue from './PesquisaBlue.vue';
+import { required } from 'vuelidate/lib/validators';
 
 export default {
   name: 'Substituto',
@@ -368,16 +390,33 @@ export default {
       reducaoBaseCalculo: null,
       custoCompra: null,
       custoReposicao: null,
+      stMedia: null,
     };
   },
+  validations: {
+    precoProduto: {
+      required,
+    },
+  },
   methods: {
-    onFiltered(filteredItems) {
-      this.totalRows = filteredItems.length;
-      this.currentPage = 1;
+    calcularPreco() {
+      if (this.$v.$invalid) {
+        this.submitStatus = 'ERROR';
+        return;
+      }
+
+      this.$on('detalhesItem', this.itemBlue);
+      this.calcularBaseCalculo();
     },
     calcularBaseCalculo() {
-      const calculoPercIPI = (this.precoProduto * this.percentualIPI) / 100;
+      //
+      const calculoPercIPI =
+        this.percentualIPI != null
+          ? (this.precoProduto * +this.percentualIPI) / 100
+          : 0;
+
       const somaPrecoIPI = +this.precoProduto + calculoPercIPI;
+
       const calculoMVA =
         Math.round(this.itemBlue.MargemLucro * somaPrecoIPI, 4) / 100;
 
@@ -385,12 +424,18 @@ export default {
 
       this.baseCalculo = baseCalculo;
 
-      this.calcularCustoCompra(calculoPercIPI, somaPrecoIPI);
+      this.calcularCustoCompra(somaPrecoIPI);
     },
-    calcularCustoCompra(calculoPercIPI, somaPrecoIPI) {
+    calcularCustoCompra(somaPrecoIPI) {
+      //
       const somaBaseCalculo = +(
-        +this.baseCalculo * (this.icmsVenda / 100) -
-        calculoPercIPI
+        +this.baseCalculo *
+        (this.icmsVenda / 100)
+      ).toFixed(2);
+
+      const creditoICMS = +(
+        somaBaseCalculo -
+        (this.precoProduto * this.creditoICMS) / 100
       ).toFixed(2);
 
       const somaCreditoPisCofins = +(
@@ -398,17 +443,43 @@ export default {
         (this.creditoPisCofins / 100)
       ).toFixed(2);
 
-      const custoCompra = somaPrecoIPI + somaBaseCalculo - somaCreditoPisCofins;
+      const custoCompra = +(
+        somaPrecoIPI +
+        creditoICMS -
+        somaCreditoPisCofins +
+        +this.valorFreteForaNFe
+      ).toFixed(2);
 
+      const stMedia = +((creditoICMS / somaPrecoIPI) * 100).toFixed(2);
+
+      console.log(somaBaseCalculo, somaPrecoIPI);
+
+      this.stMedia = stMedia;
       this.custoCompra = custoCompra;
-      console.log(somaBaseCalculo, somaCreditoPisCofins, custoCompra);
 
-      this.calcularCustoReposicao(somaPrecoIPI);
+      this.calcularCustoReposicao(somaPrecoIPI, creditoICMS);
     },
-    calcularCustoReposicao(somaPrecoIPI) {},
-    calcularPreco() {
-      this.$on('detalhesItem', this.itemBlue);
-      this.calcularBaseCalculo();
+    calcularCustoReposicao(somaPrecoIPI, creditoICMS) {
+      //
+      const custoReposicao = +(
+        somaPrecoIPI +
+        +this.valorFreteForaNFe +
+        creditoICMS
+      ).toFixed(2);
+
+      this.custoReposicao = custoReposicao;
+
+      this.calcularPrecoVenda();
+    },
+    calcularPrecoVenda() {
+      const pisCofinsBlue = this.itemBlue.PercPIS + this.itemBlue.PercCOFINS;
+      const irContSocialBlue =
+        this.itemBlue.PercIR + this.itemBlue.PercContrSoc;
+      const custoOperacional = this.itemBlue.PercCustOp;
+      //itemBlue.PercMargem = Margem
+      console.log(pisCofinsBlue, irContSocialBlue, custoOperacional);
+
+      //100 - dadosDoBlue
     },
   },
 };
@@ -432,5 +503,18 @@ export default {
   color: #fff;
   font-size: 22px;
   border-radius: 5px;
+}
+.erro {
+  display: flex;
+  text-align: center;
+  justify-content: center;
+  align-content: center;
+  background-color: rgba(255, 0, 0, 0.39);
+  color: black;
+  font-size: 14px;
+  font-weight: bold;
+  width: 300px;
+  border-radius: 15px;
+  margin-top: 5px;
 }
 </style>
