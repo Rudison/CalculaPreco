@@ -5,18 +5,27 @@
     <b-container fluid>
       <b-form inline>
         <b-row>
-          <b-col lg="4">
+          <b-col lg="3">
             <b-input-group
               prepend="Preço Produto"
               class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
             >
-              <b-form-input
+              <currency-input
                 id="precoProd"
                 style="font-weight: bold;"
                 v-model="precoProduto"
                 :value="precoProduto"
                 placeholder="0.00"
-              ></b-form-input>
+                class="form-control"
+              >
+              </currency-input>
+              <!-- <b-form-input
+                id="precoProd"
+                style="font-weight: bold;"
+                v-model="precoProduto"
+                :value="precoProduto"
+                placeholder="0.00"
+              ></b-form-input> -->
             </b-input-group>
             <div class="erro" v-if="!$v.precoProduto.required">
               * Preço Produto Obrigatório
@@ -25,11 +34,34 @@
               prepend="IPI %"
               class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
             >
-              <b-form-input
+              <!-- <b-form-input
                 id="vlrIPI"
                 style="font-weight: bold;"
                 placeholder="0.00"
                 v-model="percentualIPI"
+              ></b-form-input> -->
+
+              <currency-input
+                id="vlrIPI"
+                style="font-weight: bold;"
+                v-model="percentualIPI"
+                placeholder="0.00"
+                class="form-control"
+              >
+              </currency-input>
+            </b-input-group>
+
+            <b-input-group
+              prepend="Frete % Dentro NFe"
+              class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
+              :append="appendFreteValor"
+            >
+              <b-form-input
+                id="freteValorDentro"
+                style="font-weight: bold;"
+                placeholder="0.00"
+                v-model="valorFreteDentroNFe"
+                v-on:keydown="calcularFreteFora"
               ></b-form-input>
             </b-input-group>
 
@@ -38,12 +70,15 @@
               class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
             >
               <b-form-input
-                id="freteValor"
+                id="freteValorFora"
                 style="font-weight: bold;"
                 placeholder="0.00"
                 v-model="valorFreteForaNFe"
               ></b-form-input>
             </b-input-group>
+          </b-col>
+
+          <b-col lg="3">
             <b-input-group
               prepend="Crédito ICMS %"
               class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
@@ -54,9 +89,7 @@
                 style="font-weight: bold;"
               ></b-form-input>
             </b-input-group>
-          </b-col>
 
-          <b-col lg="4">
             <b-input-group
               prepend="Redução Base de Cálculo"
               v-b-tooltip.hover
@@ -95,7 +128,9 @@
                 placeholder="0.00"
               ></b-form-input>
             </b-input-group>
+          </b-col>
 
+          <b-col lg="3">
             <b-input-group
               prepend="Icms de Venda %"
               class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
@@ -106,9 +141,7 @@
                 v-model="icmsVenda"
               ></b-form-input>
             </b-input-group>
-          </b-col>
 
-          <b-col lg="4">
             <b-input-group
               prepend="Crédito Pis/Cofins %"
               class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
@@ -145,10 +178,12 @@
                 placeholder="0.00"
               ></b-form-input>
             </b-input-group>
+          </b-col>
 
+          <b-col cols="3">
             <b-input-group
               prepend="ST Média %"
-              class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
+              class="mb-2 mt-2 col-sm-14 col-sm-offset-14"
             >
               <b-form-input
                 id="stMedia"
@@ -159,16 +194,6 @@
               ></b-form-input>
             </b-input-group>
           </b-col>
-          <!-- <b-col cols="2" class="mt-2">
-            <b-input-group prepend="Lucro">
-              <b-form-input
-                id="lucro"
-                style="font-weight: bold;"
-                v-model.trim="lucro"
-                placeholder="0.00"
-              ></b-form-input>
-            </b-input-group>
-          </b-col> -->
         </b-row>
       </b-form>
     </b-container>
@@ -348,6 +373,12 @@
       <b-button variant="outline-primary" @click="calcularPreco"
         >Cálcular Preço</b-button
       >
+      <b-button
+        v-if="itemBlue.CodItem != '' && precoFinal != 0"
+        variant="outline-success ml-2"
+        @click="alterarERP"
+        >Altera no ERP</b-button
+      >
     </div>
   </div>
 </template>
@@ -355,6 +386,8 @@
 <script>
 import PesquisaBlue from './PesquisaBlue.vue';
 import { required } from 'vuelidate/lib/validators';
+import axios from 'axios';
+import { baseApiUrl } from '../global';
 
 export default {
   name: 'Substituto',
@@ -365,27 +398,28 @@ export default {
         CodItem: '',
         DescrItem: '',
         DescrMarca: '',
-        PercCOFINS: 0,
+        PercCOFINS: 7.6,
         PercCPMF: 0,
         PercComis: 0,
-        PercContrSoc: 0,
-        PercCustOp: 0,
-        PercIR: 0,
-        PercMargem: 0,
+        PercContrSoc: 1.08,
+        PercCustOp: 19,
+        PercIR: 1.2,
+        PercMargem: 0, //Margem/Lucro
         PercOutraDesp: 0,
-        PercPIS: 0,
+        PercPIS: 1.65,
         PrecoUnitVndProd: 0,
-        MargemLucro: 52.14,
+        MargemLucro: 0, //MVA
         ValCustoOp: 0,
         CodBarraProd: '',
         CodRefProd: '',
         CodFabrProd: '',
       },
-
       precoFinal: 0,
+      precoFinalERP: 0,
       precoProduto: null,
       percentualIPI: null,
       valorFreteForaNFe: null,
+      valorFreteDentroNFe: null,
       creditoICMS: 7,
       creditoPisCofins: 9.25,
       icmsVenda: 17,
@@ -394,6 +428,7 @@ export default {
       custoCompra: null,
       custoReposicao: null,
       stMedia: null,
+      appendFreteValor: '0.00',
     };
   },
   validations: {
@@ -402,6 +437,63 @@ export default {
     },
   },
   methods: {
+    alterarERP() {
+      this.$bvModal
+        .msgBoxConfirm(`${this.itemBlue.DescrItem} Preço:${this.precoFinal}`, {
+          title: 'Deseja Alterar Esse Registro?',
+          size: 'sm',
+          buttonSize: 'sm',
+          okVariant: 'success',
+          okTitle: 'Sim',
+          cancelTitle: 'Não',
+          hideHeaderClose: false,
+          centered: true,
+        })
+        .then((value) => {
+          if (value) {
+            const item = {
+              PrecoUnitPrz: +this.precoFinalERP,
+              PrecoUnitRev: +this.precoFinalERP,
+              PrecoUnitVndProd: +this.precoFinalERP,
+            };
+
+            axios
+              .put(`${baseApiUrl}/calcularPreco/${this.itemBlue.CodItem}`, item)
+              .then((res) => {
+                this.alertaMensagem(
+                  `Item (${this.itemBlue.DescrItem}) Alterado.`
+                );
+
+                this.limparCampos();
+                return res;
+              })
+              .catch((error) => {
+                this.$bvModal.msgBoxOk(
+                  `Erro ao Alterar Item: ${this.itemBlue.DescrItem} ${error}`
+                );
+              });
+          }
+        })
+        .catch((err) => {
+          this.$bvModal.msgBoxOk(
+            `Erro ao Alterar Item: ${this.itemBlue.DescrItem} ${err}`
+          );
+        });
+    },
+    alertaMensagem(mensagem = '') {
+      this.$bvToast.toast(`${mensagem}`, {
+        title: 'Sucesso',
+        variant: 'success',
+        solid: true,
+      });
+    },
+    calcularFreteFora() {
+      const valorForaNfe = (
+        +this.valorFreteDentroNFe *
+        (+this.precoProduto / 100)
+      ).toFixed(2);
+      this.appendFreteValor = valorForaNfe;
+    },
     calcularPreco() {
       if (this.$v.$invalid) {
         this.submitStatus = 'ERROR';
@@ -418,14 +510,15 @@ export default {
           ? (this.precoProduto * +this.percentualIPI) / 100
           : 0;
 
-      const somaPrecoIPI = +this.precoProduto + calculoPercIPI;
+      const somaPrecoIPI =
+        +this.precoProduto + calculoPercIPI + +this.appendFreteValor;
 
       const calculoMVA =
         Math.round(this.itemBlue.MargemLucro * somaPrecoIPI, 4) / 100;
 
       const baseCalculo = somaPrecoIPI + calculoMVA;
 
-      this.baseCalculo = baseCalculo;
+      this.baseCalculo = (+baseCalculo).toFixed(2);
 
       this.calcularCustoCompra(somaPrecoIPI);
     },
@@ -434,28 +527,26 @@ export default {
       const somaBaseCalculo = +(
         +this.baseCalculo *
         (this.icmsVenda / 100)
-      ).toFixed(2);
+      ).toFixed(3);
 
       const creditoICMS = +(
         somaBaseCalculo -
         (this.precoProduto * this.creditoICMS) / 100
-      ).toFixed(2);
+      ).toFixed(3);
 
       const somaCreditoPisCofins = +(
         this.precoProduto *
         (this.creditoPisCofins / 100)
-      ).toFixed(2);
+      ).toFixed(3);
 
       const custoCompra = +(
         somaPrecoIPI +
         creditoICMS -
         somaCreditoPisCofins +
         +this.valorFreteForaNFe
-      ).toFixed(2);
+      ).toFixed(3);
 
-      const stMedia = +((creditoICMS / somaPrecoIPI) * 100).toFixed(2);
-
-      console.log(somaBaseCalculo, somaPrecoIPI);
+      const stMedia = +((creditoICMS / somaPrecoIPI) * 100).toFixed(3);
 
       this.stMedia = stMedia;
       this.custoCompra = custoCompra;
@@ -468,7 +559,7 @@ export default {
         somaPrecoIPI +
         +this.valorFreteForaNFe +
         creditoICMS
-      ).toFixed(2);
+      ).toFixed(3);
 
       this.custoReposicao = custoReposicao;
 
@@ -479,10 +570,54 @@ export default {
       const irContSocialBlue =
         this.itemBlue.PercIR + this.itemBlue.PercContrSoc;
       const custoOperacional = this.itemBlue.PercCustOp;
-      //itemBlue.PercMargem = Margem
-      console.log(pisCofinsBlue, irContSocialBlue, custoOperacional);
 
-      //100 - dadosDoBlue
+      const somaImpostosProduto =
+        100 -
+        (pisCofinsBlue +
+          irContSocialBlue +
+          custoOperacional +
+          +this.itemBlue.PercMargem);
+
+      const precoFinal = (
+        +(this.custoCompra / somaImpostosProduto) * 100
+      ).toFixed(4);
+
+      this.precoFinalERP = precoFinal;
+      this.precoFinal = `R$ ${precoFinal}`;
+    },
+    limparCampos() {
+      this.itemBlue = {
+        CodItem: '',
+        DescrItem: '',
+        DescrMarca: '',
+        PercCOFINS: 7.6,
+        PercCPMF: 0,
+        PercComis: 0,
+        PercContrSoc: 1.08,
+        PercCustOp: 19,
+        PercIR: 1.2,
+        PercMargem: 0, //Margem/Lucro
+        PercOutraDesp: 0,
+        PercPIS: 1.65,
+        PrecoUnitVndProd: 0,
+        MargemLucro: 0, //MVA
+        ValCustoOp: 0,
+        CodBarraProd: '',
+        CodRefProd: '',
+        CodFabrProd: '',
+      };
+
+      this.precoProduto = null;
+      this.percentualIPI = null;
+      this.valorFreteForaNFe = null;
+      this.valorFreteDentroNFe = null;
+      this.precoFinal = 0;
+      this.baseCalculo = null;
+      this.reducaoBaseCalculo = null;
+      this.custoCompra = null;
+      this.custoReposicao = null;
+      this.stMedia = null;
+      this.appendFreteValor = '0.00';
     },
   },
 };
@@ -490,7 +625,7 @@ export default {
 
 <style>
 .botaoMeio {
-  display: grid;
+  display: flex;
   justify-content: center;
 }
 .prodsSubs {

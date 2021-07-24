@@ -18,32 +18,37 @@
       hide-footer
     >
       <b-container fluid>
-        <div class="mb-3 pesquisa">
-          <b-input-group prepend="Cód/Ref Produto">
-            <b-form-input ref="pesquisaId" v-model="codigoItem"> </b-form-input>
-
-            <b-input-group-append>
-              <b-button
-                variant="primary"
-                v-on:keyup="buscarItemBlue"
-                @click="buscarItemBlue"
+        <b-form @submit.stop.prevent>
+          <div class="mb-3 pesquisa">
+            <b-input-group prepend="Cód/Ref Produto">
+              <b-form-input
+                ref="pesquisaId"
+                v-model="codigoItem"
+                v-on:keyup.enter="buscarItemBlue"
+                :state="validation"
               >
-                <b-icon icon="search"></b-icon>
-              </b-button>
-            </b-input-group-append>
-          </b-input-group>
-          <b-button class="mr-2 ml-2" @click="$bvModal.hide('modalProdutos')"
-            >Fechar</b-button
-          >
-        </div>
-        <div class="erro mb-2" v-if="!$v.codigoItem.required">
-          * Cód/Ref Obrigatório
-        </div>
+              </b-form-input>
+
+              <b-input-group-append>
+                <b-button variant="primary" @click="buscarItemBlue">
+                  <b-icon icon="search"></b-icon>
+                </b-button>
+              </b-input-group-append>
+
+              <b-form-invalid-feedback :state="validation">
+                Mínimo 2 Caracteres.
+              </b-form-invalid-feedback>
+            </b-input-group>
+            <b-button class=" ml-2" @click="$bvModal.hide('modalProdutos')"
+              >Fechar</b-button
+            >
+          </div>
+        </b-form>
       </b-container>
 
       <b-container fluid>
         <b-row>
-          <b-col lg="6" class="my-1">
+          <b-col lg="6" class="my-1 mb-3">
             <b-form-group
               label="Pesquisar"
               label-for="filter-input"
@@ -132,7 +137,7 @@ export default {
       dadosItem: [],
       fields: [
         { key: 'CodItem', label: 'Código', sortable: true },
-        { key: 'DescrItem', label: 'Descrição' },
+        { key: 'DescrItem', label: 'Descrição', sortable: true },
         { key: 'DescrMarca', label: 'Marca', sortable: true },
         { key: 'CodFabrProd', label: 'Cód. Fabricante', sortable: true },
         { key: 'CodRefProd', label: 'Código Referencia', sortable: true },
@@ -150,6 +155,13 @@ export default {
   validations: {
     codigoItem: {
       required,
+    },
+  },
+  computed: {
+    validation() {
+      return this.codigoItem != null
+        ? this.codigoItem.length > 1 && this.codigoItem.length < 21
+        : null;
     },
   },
   methods: {
@@ -170,7 +182,6 @@ export default {
         });
     },
     selecionar(item) {
-      console.log(item);
       this.$emit('detalhesItem', item);
       this.$bvModal.hide('modalProdutos');
     },
