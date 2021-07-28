@@ -1,11 +1,12 @@
 import Vue from 'vue';
 import App from './App.vue';
+import Vuelidate from 'vuelidate';
 
 import './plugins/bootstrap-vue';
 import './plugins/vue-js-modal';
 import './plugins/vuelidade';
-import './plugins/vue-currency-input';
 import 'animate.css';
+import '../vue.config';
 
 import router from './router';
 

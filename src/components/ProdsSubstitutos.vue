@@ -10,7 +10,14 @@
               prepend="Preço Produto"
               class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
             >
-              <currency-input
+              <CurrencyInput
+                style="font-weight: bold;"
+                v-model="precoProduto"
+                :options="options"
+                class="form-control"
+              />
+
+              <!-- <MoneyInput
                 id="precoProd"
                 style="font-weight: bold;"
                 v-model="precoProduto"
@@ -18,7 +25,7 @@
                 placeholder="0.00"
                 class="form-control"
               >
-              </currency-input>
+              </MoneyInput> -->
               <!-- <b-form-input
                 id="precoProd"
                 style="font-weight: bold;"
@@ -41,14 +48,15 @@
                 v-model="percentualIPI"
               ></b-form-input> -->
 
-              <currency-input
+              <CurrencyInput
                 id="vlrIPI"
                 style="font-weight: bold;"
                 v-model="percentualIPI"
+                :options="options"
                 placeholder="0.00"
                 class="form-control"
               >
-              </currency-input>
+              </CurrencyInput>
             </b-input-group>
 
             <b-input-group
@@ -56,25 +64,46 @@
               class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
               :append="appendFreteValor"
             >
-              <b-form-input
+              <!-- <b-form-input
                 id="freteValorDentro"
                 style="font-weight: bold;"
                 placeholder="0.00"
                 v-model="valorFreteDentroNFe"
                 v-on:keydown="calcularFreteFora"
-              ></b-form-input>
+              ></b-form-input> -->
+
+              <CurrencyInput
+                id="freteValorDentro"
+                style="font-weight: bold;"
+                v-model="valorFreteDentroNFe"
+                @change="calcularFreteFora"
+                :options="options"
+                placeholder="0.00"
+                class="form-control"
+              >
+              </CurrencyInput>
             </b-input-group>
 
             <b-input-group
               prepend="Frete Valor Fora NFe"
               class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
             >
-              <b-form-input
+              <!-- <b-form-input
                 id="freteValorFora"
                 style="font-weight: bold;"
                 placeholder="0.00"
                 v-model="valorFreteForaNFe"
-              ></b-form-input>
+              ></b-form-input> -->
+
+              <CurrencyInput
+                id="freteValorFora"
+                style="font-weight: bold;"
+                v-model="valorFreteForaNFe"
+                :options="options"
+                placeholder="0.00"
+                class="form-control"
+              >
+              </CurrencyInput>
             </b-input-group>
           </b-col>
 
@@ -83,11 +112,25 @@
               prepend="Crédito ICMS %"
               class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
             >
-              <b-form-input
+              <CurrencyInput
+                id="credICMS"
+                style="font-weight: bold;"
+                v-model="creditoICMS"
+                placeholder="0.00"
+                class="form-control"
+                :options="{
+                  locale: 'pt-BR',
+                  currency: 'BRL',
+                  currencyDisplay: 'hidden',
+                  autoSign: false,
+                }"
+              >
+              </CurrencyInput>
+              <!-- <b-form-input
                 id="creditoICMS"
                 v-model="creditoICMS"
                 style="font-weight: bold;"
-              ></b-form-input>
+              ></b-form-input> -->
             </b-input-group>
 
             <b-input-group
@@ -99,6 +142,7 @@
               <b-form-input
                 id="reducaoBaseCalc"
                 style="font-weight: bold;"
+                disabled
                 placeholder="0.00"
                 v-model="reducaoBaseCalculo"
               ></b-form-input>
@@ -108,12 +152,22 @@
               prepend="MVA %"
               class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
             >
-              <b-form-input
+              <CurrencyInput
+                id="MVA"
+                style="font-weight: bold;"
+                v-model="itemBlue.MargemLucro"
+                :options="options"
+                placeholder="0.00"
+                class="form-control"
+              >
+              </CurrencyInput>
+
+              <!-- <b-form-input
                 id="MVA"
                 style="font-weight: bold;"
                 placeholder="0.00"
                 v-model="itemBlue.MargemLucro"
-              ></b-form-input>
+              ></b-form-input> -->
             </b-input-group>
 
             <b-input-group
@@ -135,22 +189,42 @@
               prepend="Icms de Venda %"
               class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
             >
-              <b-form-input
+              <!-- <b-form-input
                 id="icmsVenda"
                 style="font-weight: bold;"
                 v-model="icmsVenda"
-              ></b-form-input>
+              ></b-form-input> -->
+
+              <CurrencyInput
+                id="icmsVnd"
+                style="font-weight: bold;"
+                v-model="icmsVenda"
+                :options="options"
+                placeholder="0.00"
+                class="form-control"
+              >
+              </CurrencyInput>
             </b-input-group>
 
             <b-input-group
               prepend="Crédito Pis/Cofins %"
               class="mb-2 mr-sm-2 mb-sm-0 mt-2 col-sm-14 col-sm-offset-14"
             >
-              <b-form-input
+              <!-- <b-form-input
                 id="creditoPisCofins"
                 style="font-weight: bold;"
                 v-model="creditoPisCofins"
-              ></b-form-input>
+              ></b-form-input> -->
+
+              <CurrencyInput
+                id="credPisCofins"
+                style="font-weight: bold;"
+                v-model="creditoPisCofins"
+                :options="options"
+                placeholder="0.00"
+                class="form-control"
+              >
+              </CurrencyInput>
             </b-input-group>
 
             <b-input-group
@@ -186,7 +260,7 @@
               class="mb-2 mt-2 col-sm-14 col-sm-offset-14"
             >
               <b-form-input
-                id="stMedia"
+                id="stMediaa"
                 style="font-weight: bold;"
                 v-model="stMedia"
                 placeholder="0.00"
@@ -285,12 +359,23 @@
             class="mb-2 mr-sm-2 mb-'sm-0 mt-2"
             font="bold"
           >
-            <b-form-input
+            <CurrencyInput
+              id="margem"
+              style="font-weight: bold;"
+              v-model="itemBlue.PercMargem"
+              :options="options"
+              placeholder="0.00"
+              class="form-control"
+            >
+            </CurrencyInput>
+
+            <!-- <b-form-input
               id="margem"
               style="font-weight: bold;"
               v-model.trim="itemBlue.PercMargem"
-            ></b-form-input> </b-input-group
-        ></b-col>
+            ></b-form-input>  -->
+          </b-input-group></b-col
+        >
         <b-col>
           <b-input-group
             prepend="Outros Custos"
@@ -384,16 +469,26 @@
 </template>
 
 <script>
+import CurrencyInput from './CurrencyInput.vue';
 import PesquisaBlue from './PesquisaBlue.vue';
-import { required } from 'vuelidate/lib/validators';
+import { required } from 'vuelidate/dist/validators.min.js';
 import axios from 'axios';
 import { baseApiUrl } from '../global';
 
 export default {
   name: 'Substituto',
-  components: { PesquisaBlue },
+  components: { PesquisaBlue, CurrencyInput },
   data() {
     return {
+      options: {
+        locale: 'pt-BR',
+        currency: 'BRL',
+        currencyDisplay: 'hidden',
+        hideCurrencySymbolOnFocus: true,
+        hideGroupingSeparatorOnFocus: true,
+        hideNegligibleDecimalDigitsOnFocus: true,
+      },
+      value: 1110,
       itemBlue: {
         CodItem: '',
         DescrItem: '',
@@ -492,6 +587,7 @@ export default {
         +this.valorFreteDentroNFe *
         (+this.precoProduto / 100)
       ).toFixed(2);
+
       this.appendFreteValor = valorForaNfe;
     },
     calcularPreco() {
@@ -500,7 +596,7 @@ export default {
         return;
       }
 
-      this.$on('detalhesItem', this.itemBlue);
+      // this.$on('detalhesItem', this.itemBlue);
       this.calcularBaseCalculo();
     },
     calcularBaseCalculo() {
@@ -617,6 +713,7 @@ export default {
       this.custoCompra = null;
       this.custoReposicao = null;
       this.stMedia = null;
+      this.creditoICMS = 7;
       this.appendFreteValor = '0.00';
     },
   },
@@ -654,5 +751,13 @@ export default {
   width: 300px;
   border-radius: 15px;
   margin-top: 5px;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s;
+}
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  opacity: 0;
 }
 </style>
